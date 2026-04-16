@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import numpy as np
-import sys
 import time
 import pytest
 
@@ -99,13 +98,13 @@ def test_merge_raise():
         pyhopper.merge_dicts({"a": pyhopper.int(0, 10)}, {"a": pyhopper.float(0, 10)})
 
     with pytest.raises(ValueError):
-        search = pyhopper.Search(
+        pyhopper.Search(
             {"a": pyhopper.int(0, 10)},
             {"a": pyhopper.float(0, 10)},
             c="hello",
         )
     with pytest.raises(ValueError):
-        search = pyhopper.Search(
+        pyhopper.Search(
             {"a": pyhopper.int(0, 10)},
             a="hello",
         )
@@ -168,7 +167,7 @@ def test_float_register():
     assert "lr3" in r1.keys()
     assert "lr4" in r1.keys()
     assert "lr5" in r1.keys()
-    r2 = search.run(ofall, direction="max", runtime=0.5)
+    search.run(ofall, direction="max", runtime=0.5)
     assert "lr" in r1.keys()
     assert "lr2" in r1.keys()
     assert "lr3" in r1.keys()
@@ -178,7 +177,7 @@ def test_float_register():
 
 def test_float_register_name_negative_single_bound():
     with pytest.raises(ValueError):
-        search = pyhopper.Search({"lr": pyhopper.float(-1)})
+        pyhopper.Search({"lr": pyhopper.float(-1)})
 
 
 def test_int_register():
@@ -206,9 +205,9 @@ def test_int_register():
 
 def test_int_register_name_negative_single_bound():
     with pytest.raises(ValueError):
-        search = pyhopper.Search({"lr": pyhopper.int(-5)})
+        pyhopper.Search({"lr": pyhopper.int(-5)})
     with pytest.raises(ValueError):
-        search = pyhopper.Search({"lr": pyhopper.int(0)})
+        pyhopper.Search({"lr": pyhopper.int(0)})
 
 
 def test_choice_register():
@@ -237,7 +236,7 @@ def test_parallelization():
         }
     )
     start = time.time()
-    r1 = search.run(of, direction="max", seeding_steps=4, steps=10, n_jobs=5)
+    search.run(of, direction="max", seeding_steps=4, steps=10, n_jobs=5)
     assert time.time() - start < 3
 
 
@@ -264,7 +263,7 @@ def test_float_constraints():
             "g1": pyhopper.float(1e-6, 1e-3, log=True, precision=1),
         }
     )
-    r1 = search.run(check_constraints_of, direction="min", steps=50, seeding_steps=30)
+    search.run(check_constraints_of, direction="min", steps=50, seeding_steps=30)
 
 
 def of_freeze1(param):

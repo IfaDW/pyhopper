@@ -1,9 +1,6 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 from tensorboardX import SummaryWriter
-from datetime import datetime
-import os
-import pickle
 
 from pyhopper.callbacks import Callback
 

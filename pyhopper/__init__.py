@@ -26,7 +26,7 @@ from pyhopper.search import register_choice as choice
 from pyhopper.search import register_bool as bool
 from pyhopper.utils import NTimesEvaluator as wrap_n_times
 from pyhopper.utils import parse_runtime as parse_runtime
-from pyhopper.utils import ParamInfo
-from pyhopper.utils import CandidateType
-from pyhopper.utils import merge_dicts
-from pyhopper.utils import load_dict, store_dict
+from pyhopper.utils import ParamInfo as ParamInfo
+from pyhopper.utils import CandidateType as CandidateType
+from pyhopper.utils import merge_dicts as merge_dicts
+from pyhopper.utils import load_dict as load_dict, store_dict as store_dict

@@ -1,14 +1,11 @@
 import gym
-import pybullet_envs as pe
 
 from stable_baselines3 import PPO
 
 # import stable_baselines3
 
 # from stable_baselines3.ppo import MlpPolicy
-from stable_baselines3.common.evaluation import evaluate_policy
 import numpy as np
-import time
 from torch.nn import ReLU, Tanh
 
 import pyhopper

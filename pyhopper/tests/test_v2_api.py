@@ -14,13 +14,10 @@
 import os
 
 import numpy as np
-import sys
-import time
 import pytest
 
 import pyhopper
 from pyhopper.utils import (
-    parse_runtime,
     store_dict,
     load_dict,
     convert_to_checkpoint_path,
@@ -130,7 +127,7 @@ def test_fmt():
         l=pyhopper.float(1e-5, 1e-2, ":0.5g"), u=pyhopper.float(1, 10, ":0.1f")
     )
 
-    r1 = search.run(of_ul, direction="max", steps=20)
+    search.run(of_ul, direction="max", steps=20)
 
 
 def of_nested(param):

@@ -153,8 +153,8 @@ class NTimesEvaluator:
                 r = self._func(param, **kwargs)
             if r is None:
                 raise ValueError(
-                    f"Objective function returned None. The probably means you forgot to add a 'return' statement at "
-                    f"the end of the function "
+                    "Objective function returned None. The probably means you forgot to add a 'return' statement at "
+                    "the end of the function "
                 )
             results.append(float(r))
             if self._yield_after is not None and i >= self._yield_after:

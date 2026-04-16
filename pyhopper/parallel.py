@@ -20,13 +20,11 @@ from types import GeneratorType
 import numpy as np
 import sys
 import subprocess
-from xml.etree.ElementTree import fromstring
 from .pruners.pruners import (
     set_global_pruner,
     should_prune,
     get_intermediate_results_list,
 )
-from .utils import unwrap_sample
 
 _signals_received = 0
 
@@ -46,9 +44,9 @@ class SignalListener:
                 "CTRL+C received. Will terminate once the currently running candidates finished"
             )
         elif self._sigterm_received == 1:
-            print(f"Will force termination on 2/3 signals")
+            print("Will force termination on 2/3 signals")
         else:
-            print(f"Terminate")
+            print("Terminate")
         self._sigterm_received += 1
         if self._sigterm_received >= 3:
             if self._force_quit_callback is not None:
@@ -255,7 +253,7 @@ def execute(objective_function, candidate, pruner, kwargs, remote=False, gpu=Non
     except PruneEvaluation:
         # If objective function raises this error, the evaluation will be treated as being pruned
         eval_result.was_pruned = True
-    except:
+    except Exception:
         etype, value, tb = sys.exc_info()
         eval_result.error = "".join(format_exception(etype, value, tb, 4096))
     eval_result.intermediate_results = get_intermediate_results_list()

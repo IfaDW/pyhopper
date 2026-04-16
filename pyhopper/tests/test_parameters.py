@@ -1,7 +1,4 @@
 import numpy as np
-import sys
-import time
-import pytest
 
 import pyhopper
 
@@ -41,7 +38,7 @@ def test_int_register():
             "lf_2d": pyhopper.float(0.05, 50, shape=(10, 10), log=True),
         }
     )
-    r1 = search.run(of_check, direction="max", steps=20)
+    search.run(of_check, direction="max", steps=20)
 
 
 if __name__ == "__main__":

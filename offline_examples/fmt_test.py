@@ -1,11 +1,5 @@
 import numpy as np
-import sys
-import os
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
 
-import seaborn as sns
 
 # sys.path.insert(0, ".")
 import pyhopper

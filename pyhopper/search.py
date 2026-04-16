@@ -31,16 +31,12 @@ from .parallel import execute, TaskManager, SignalListener
 import numpy as np
 from typing import Union, Optional, Any, Tuple, Sequence
 from types import FunctionType
-from enum import Enum
 import time
 
 from .run_context import ScheduledRun, RunContext
 from .utils import (
-    parse_runtime,
     sanitize_bounds,
     infer_shape,
-    time_to_pretty_str,
-    steps_to_pretty_str,
     ParamInfo,
     CandidateType,
     merge_dicts,
@@ -193,7 +189,7 @@ def register_custom(
 ) -> CustomParameter:
     if seeding_fn is None and init is None:
         raise ValueError(
-            f"Could not create custom parameter, must either provide an initial value or a seeding strategy function"
+            "Could not create custom parameter, must either provide an initial value or a seeding strategy function"
         )
     if init is None:
         init = seeding_fn()
@@ -325,9 +321,9 @@ def register_float(
     """
     lb, ub = sanitize_bounds(lb, ub)
     if log is not None and fmt is not None:
-        raise ValueError(f"Cannot specify `log` and `fmt` at the same time.")
+        raise ValueError("Cannot specify `log` and `fmt` at the same time.")
     if precision is not None and fmt is not None:
-        raise ValueError(f"Cannot specify `log` and `fmt` at the same time.")
+        raise ValueError("Cannot specify `log` and `fmt` at the same time.")
 
     if fmt is not None:
         # simple but non-pedantic parsing of the format string
@@ -965,7 +961,7 @@ class Search:
         if self._run_context is not None and self._run_context.pruner is not None:
             if pruner is not None and pruner != self._run_context.pruner:
                 raise ValueError(
-                    f"Error. Pruner object passed to 'save' and other pruner object passed to 'run'"
+                    "Error. Pruner object passed to 'save' and other pruner object passed to 'run'"
                 )
             pruner = self._run_context.pruner
 
@@ -1010,7 +1006,7 @@ class Search:
                 ):
                     if pruner is not None and pruner != self._run_context.pruner:
                         raise ValueError(
-                            f"Error. Pruner object passed to 'load' and other pruner object passed to 'run'"
+                            "Error. Pruner object passed to 'load' and other pruner object passed to 'run'"
                         )
                     pruner = self._run_context.pruner
                 if pruner is not None:

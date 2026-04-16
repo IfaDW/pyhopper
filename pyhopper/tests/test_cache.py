@@ -13,9 +13,6 @@
 # limitations under the License.
 
 import numpy as np
-import sys
-import time
-import pytest
 
 from pyhopper.cache import EvaluationCache
 

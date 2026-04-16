@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import as absolute_import
 
-from pyhopper.callbacks.callbacks import Callback
-from pyhopper.callbacks.callbacks import History
+from pyhopper.callbacks.callbacks import Callback as Callback
+from pyhopper.callbacks.callbacks import History as History
