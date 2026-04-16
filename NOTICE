@@ -1,0 +1,12 @@
+PyHopper
+Copyright 2018-2022 Mathias Lechner
+Copyright 2022 Massachusetts Institute of Technology
+Copyright 2018-2022 Institute of Science and Technology Austria (IST Austria)
+Copyright 2021-2022 Simple-AI
+
+This product includes software originally developed by the above copyright
+holders and licensed under the Apache License, Version 2.0.
+
+Maintenance fork from 2026 onward by IfaDW (https://github.com/IfaDW).
+Changes include build-system modernization, migration to Python 3.12+,
+addition of type hints, and CI updates. No algorithmic changes were made.

@@ -1,57 +1,76 @@
-<div align="center"><img src="https://raw.githubusercontent.com/pyhopper/pyhopper/main/docs/img/banner_gray.png" width="800"/></div>
+# PyHopper
 
-# PyHopper - Optimizing high-dimensional hyperparameters
+> Black-box hyperparameter optimization for high-dimensional search spaces.
 
-![ci_badge](https://github.com/PyHopper/PyHopper/actions/workflows/continuous_integration.yml/badge.svg) [![Documentation Status](https://readthedocs.org/projects/pyhopper/badge/?version=latest)](https://pyhopper.readthedocs.io/en/latest/?badge=latest) ![pyversion](docs/img/pybadge.svg)
-![PyPI version](https://img.shields.io/pypi/v/pyhopper)
-![downloads](https://img.shields.io/pypi/dm/pyhopper)
+Maintenance fork of [pyhopper/pyhopper](https://github.com/pyhopper/pyhopper) (Mathias Lechner et al., MIT/IST Austria, Apache-2.0). The original upstream has been inactive since October 2021. This fork modernizes the package for current Python versions without altering the MCMC algorithm itself.
 
-[**Website**](https://pyhopper.io)
-| [**Docs**](https://pyhopper.readthedocs.io/)
-| [**Paper**](https://arxiv.org/abs/2210.04728)
-| [**Quickstart**](https://pyhopper.readthedocs.io/en/latest/quickstart.html)
-| [![Colab Tutorial](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1UPzhfCNCagh4OjI0VQyq87TpFbGoFBBl?usp=sharing)
+## Relationship to upstream
 
+No algorithmic changes are made. The fork is limited to:
 
-PyHopper is a hyperparameter optimizer, made specifically for high-dimensional problems arising in machine learning research and businesses.
+- Migration to `pyproject.toml` (PEP 621)
+- Python ≥ 3.12, type hints throughout, `mypy --strict` clean
+- Ruff replaces Black/isort/flake8
+- Updated CI on GitHub Actions
+- Dependency pinning for reproducible builds
+
+If upstream becomes interested in re-integration, PRs are welcome.
+
+## Installation
 
 ```bash
-pip3 install -U pyhopper
+pip install git+https://github.com/IfaDW/pyhopper.git
 ```
 
-PyHopper is lightweight, rich in features, and requires minimal changes to existing code
+For development:
+
+```bash
+git clone https://github.com/IfaDW/pyhopper.git
+cd pyhopper
+pip install -e ".[dev]"
+```
+
+## Quick start
 
 ```python
 import pyhopper
 
-def my_objective(params: dict) -> float:
-    model = build_model(params["hidden_size"],...)
-    # .... train and evaluate the model
-    return val_accuracy
+def objective(params: dict) -> float:
+    model = build_model(params["hidden_size"], params["dropout"])
+    return validate(model)
 
 search = pyhopper.Search(
-    units   = pyhopper.int(100,500),
-    dropout = pyhopper.float(0,0.4,"0.1f"), # 1 decimal digit
-    lr      = pyhopper.float(1e-5,1e-2,"0.1g"), # loguniform, 1 significant
-    matrix  = pyhopper.float(-1,1,shape=(20,20)), # numpy array
-    opt     = pyhopper.choice(["adam","rmsprop","sgd"]),
+    hidden_size=pyhopper.int(100, 500),
+    dropout=pyhopper.float(0.0, 0.4, "0.1f"),
+    lr=pyhopper.float(1e-5, 1e-2, "0.1g"),
+    optimizer=pyhopper.choice(["adam", "rmsprop", "sgd"]),
 )
-best_params = search.run(my_objective, "maximize", "8h", n_jobs="per-gpu")
+best = search.run(objective, "maximize", "8h", n_jobs="per-gpu")
 ```
 
-Its most important features are
+Full API documentation: see the [upstream docs](https://pyhopper.readthedocs.io/) — they apply unchanged.
 
-- 1-line multi-GPU parallelization
-- native NumPy array hyperparameter support
-- automatic runtime scheduling of exploration vs exploitation
+## Verification
 
-Under its hood, PyHopper uses an efficient 2-stage Markov chain Monte Carlo (MCMC) optimization algorithm.
+```bash
+ruff check . && ruff format --check . && mypy --strict . && pytest --tb=short -q
+```
 
-![alt](docs/img/sampling.webp)
+## License
 
-For more info, check out [PyHopper's documentation](https://pyhopper.readthedocs.io/)
+Apache License 2.0 (unchanged from upstream). See `LICENSE` and `NOTICE`.
 
-Copyright ©2018-2022. Mathias Lechner  
-Copyright ©2022. Massachusetts Institute of Technology  
-Copyright ©2018-2022. Institute of Science and Technology Austria (IST Austria)  
-Copyright ©2021-2022. Simple-AI  
+## Citation
+
+The original algorithm is described in:
+
+> Lechner, M. et al. (2022). *PyHopper — Hyperparameter optimization*. NeurIPS Workshop "Has it Trained Yet?". [arXiv:2210.04728](https://arxiv.org/abs/2210.04728)
+
+```bibtex
+@inproceedings{lechner2022pyhopper,
+  title={PyHopper -- Hyperparameter optimization},
+  author={Lechner, Mathias and others},
+  booktitle={NeurIPS 2022 Workshop on Has it Trained Yet?},
+  year={2022}
+}
+```
