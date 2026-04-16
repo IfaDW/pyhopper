@@ -11,19 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import signal
-import time
-
 import os
+import signal
+import subprocess
+import sys
+import time
 from traceback import format_exception
 from types import GeneratorType
+
 import numpy as np
-import sys
-import subprocess
+
 from .pruners.pruners import (
+    get_intermediate_results_list,
     set_global_pruner,
     should_prune,
-    get_intermediate_results_list,
 )
 
 _signals_received = 0
@@ -40,9 +41,7 @@ class SignalListener:
         global _signals_received
         _signals_received += 1
         if self._sigterm_received == 0:
-            print(
-                "CTRL+C received. Will terminate once the currently running candidates finished"
-            )
+            print("CTRL+C received. Will terminate once the currently running candidates finished")
         elif self._sigterm_received == 1:
             print("Will force termination on 2/3 signals")
         else:
@@ -135,7 +134,7 @@ def parse_nvidia_smi():
 
 def get_gpu_list():
     gpu_ids, gpu_names, gpu_default_modes = parse_nvidia_smi()
-    if "CUDA_VISIBLE_DEVICES" in os.environ.keys():
+    if "CUDA_VISIBLE_DEVICES" in os.environ:
         # User specified which GPUs to use (could be a subset of the GPUs on the machine)
         if gpu_ids is None:
             print(
@@ -168,7 +167,7 @@ class GPUAllocator:
                 "Error: GPUs are configured in Process Exclusive mode. Cannot run multiple training processes per GPU."
             )
         virtual_gpus = []
-        for i in range(factor):
+        for _i in range(factor):
             virtual_gpus.extend(physical_gpus)
         self.num_gpus = len(virtual_gpus)
         self._free_gpus = virtual_gpus
@@ -283,9 +282,7 @@ class TaskManager:
         self._gpu_allocator = None
         self._pending_candidates = []
         self._pending_futures = []
-        if isinstance(n_jobs, str) and (
-            n_jobs.endswith("per_gpu") or n_jobs.endswith("per-gpu")
-        ):
+        if isinstance(n_jobs, str) and (n_jobs.endswith("per_gpu") or n_jobs.endswith("per-gpu")):
             if mp_backend == "dask-cuda":
                 mp_backend = "dask-cuda"
             elif mp_backend in ["auto", "multiprocessing"]:
@@ -311,13 +308,12 @@ class TaskManager:
         if mp_backend == "dask-cuda":
             # Experimental
             try:
-                from dask_cuda import LocalCUDACluster
                 from dask.distributed import Client, wait
-            except ImportError:
+                from dask_cuda import LocalCUDACluster
+            except ImportError as err:
                 raise ValueError(
-                    "Could not import cuda-dask. Make sure dask is installed ```pip3 install -U cuda-dask```. "
-                    + str(sys.exc_info()[0])
-                )
+                    "Could not import cuda-dask. Make sure dask is installed ```pip3 install -U cuda-dask```."
+                ) from err
             self._backend_FIRST_COMPLETED = "FIRST_COMPLETED"
             self._backend_ALL_COMPLETED = "ALL_COMPLETED"
             cluster = LocalCUDACluster()
@@ -332,25 +328,22 @@ class TaskManager:
             self._backend_wait_func = concurrent.futures.wait
             self._backend_FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
             self._backend_ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
-            self._backend_task_executor = concurrent.futures.ProcessPoolExecutor(
-                max_workers=n_jobs
-            )
+            self._backend_task_executor = concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs)
         elif mp_backend == "dask":
             # Experimental
             try:
                 from dask.distributed import Client, LocalCluster, wait
-            except ImportError:
+            except ImportError as err:
                 raise ValueError(
                     "Could not import dask. Make sure dask is installed ```pip3 install -U dask[distributed]```."
-                    + str(sys.exc_info()[0])
-                )
+                ) from err
             self._backend_FIRST_COMPLETED = "FIRST_COMPLETED"
             self._backend_ALL_COMPLETED = "ALL_COMPLETED"
             cluster = LocalCluster(n_workers=n_jobs)
             self._backend_task_executor = Client(cluster)
             self._backend_wait_func = wait
         else:
-            assert False, "This should never happen"
+            raise AssertionError("This should never happen")
         self._mp_backend = mp_backend
         self.n_jobs = n_jobs
 
@@ -381,17 +374,13 @@ class TaskManager:
         if len(self._pending_futures) <= 0:
             # Nothing to do
             return
-        self._backend_wait_func(
-            self._pending_futures, return_when=self._backend_FIRST_COMPLETED
-        )
+        self._backend_wait_func(self._pending_futures, return_when=self._backend_FIRST_COMPLETED)
 
     def wait_for_all_to_complete(self):
         if len(self._pending_futures) <= 0:
             # Nothing to do
             return
-        self._backend_wait_func(
-            self._pending_futures, return_when=self._backend_ALL_COMPLETED
-        )
+        self._backend_wait_func(self._pending_futures, return_when=self._backend_ALL_COMPLETED)
 
     def iterate_done_tasks(self):
         """

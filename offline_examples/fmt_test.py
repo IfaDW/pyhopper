@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # sys.path.insert(0, ".")
 import pyhopper
 

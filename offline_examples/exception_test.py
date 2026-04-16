@@ -1,6 +1,3 @@
-
-
-
 # sys.path.insert(0, ".")
 import pyhopper
 
@@ -10,7 +7,6 @@ def of(param):
 
 
 if __name__ == "__main__":
-
     search = pyhopper.Search(
         {
             "lr": pyhopper.float(1e-5, 1e-2, fmt="0.1g"),

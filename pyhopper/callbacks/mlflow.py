@@ -1,7 +1,8 @@
-import mlflow
-from datetime import datetime
 import os
 import pickle
+from datetime import datetime
+
+import mlflow
 
 from pyhopper.callbacks import Callback
 

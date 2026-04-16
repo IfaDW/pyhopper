@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import typing
 from inspect import signature
+
+import numpy as np
 
 from pyhopper.utils import WrappedSample
 
@@ -139,9 +140,7 @@ class IntParameter(Parameter):
             # deep copy value in case mutation_strategy operates in-place
             if isinstance(value, np.ndarray):
                 value = np.copy(value)
-            new_value = call_with_temperature(
-                self._mutation_strategy, value, temperature
-            )
+            new_value = call_with_temperature(self._mutation_strategy, value, temperature)
         else:
             # Integer is always bounded
             spread = self._ub - self._lb
@@ -149,9 +148,7 @@ class IntParameter(Parameter):
                 np.round(
                     temperature
                     * 0.5
-                    * np.random.default_rng().integers(
-                        -spread, spread, size=self._shape
-                    )
+                    * np.random.default_rng().integers(-spread, spread, size=self._shape)
                 )
             )
         new_value = self._round_to_multiple_of(new_value)
@@ -173,9 +170,7 @@ class PowerOfIntParameter(IntParameter):
         mutation_strategy,
         sampling_strategy,
     ):
-        super().__init__(
-            shape, lb, ub, init, multiple_of, mutation_strategy, sampling_strategy
-        )
+        super().__init__(shape, lb, ub, init, multiple_of, mutation_strategy, sampling_strategy)
         self._power_of = power_of
         self._log_param = IntParameter(
             shape, int(np.log2(lb)), int(np.log2(ub)), None, None, None, None
@@ -205,9 +200,7 @@ class PowerOfIntParameter(IntParameter):
             # deep copy value in case mutation_strategy operates in-place
             if isinstance(value, np.ndarray):
                 value = np.copy(value)
-            new_value = call_with_temperature(
-                self._mutation_strategy, value, temperature
-            )
+            new_value = call_with_temperature(self._mutation_strategy, value, temperature)
         else:
             log_value = cast_to_int(np.log2(value))
             new_value = self._log_param.mutate(log_value, temperature)
@@ -221,22 +214,15 @@ class PowerOfIntParameter(IntParameter):
 
 
 class ChoiceParameter(Parameter):
-    def __init__(
-        self, options, init_index, is_ordinal, mutation_strategy, sampling_strategy
-    ):
+    def __init__(self, options, init_index, is_ordinal, mutation_strategy, sampling_strategy):
         super().__init__()
         self._options = options
         self._is_ordinal = is_ordinal
         self._mutation_strategy = mutation_strategy
         self._sampling_strategy = sampling_strategy
-        self._int_param = IntParameter(
-            None, 0, len(options) - 1, None, None, None, None
-        )
+        self._int_param = IntParameter(None, 0, len(options) - 1, None, None, None, None)
         if init_index is None:
-            if is_ordinal:
-                init_index = (len(options) - 1) // 2
-            else:
-                init_index = 0
+            init_index = (len(options) - 1) // 2 if is_ordinal else 0
         self.initial_value = WrappedSample(options[init_index], init_index)
 
     def sample(self):
@@ -249,9 +235,7 @@ class ChoiceParameter(Parameter):
 
     def mutate(self, value, temperature: float):
         if self._mutation_strategy is not None:
-            new_index = call_with_temperature(
-                self._mutation_strategy, value, temperature
-            )
+            new_index = call_with_temperature(self._mutation_strategy, value, temperature)
         elif self._is_ordinal:
             # Values are ordered/related -> prefer adjacent items
             new_index = self._int_param.mutate(value.aux, temperature)
@@ -328,9 +312,7 @@ class FloatParameter(Parameter):
                 # in unbounded mode we sample a Gaussian
                 new_value = np.random.default_rng().normal(size=self._shape)
             else:
-                new_value = np.random.default_rng().uniform(
-                    self._lb, self._ub, size=self._shape
-                )
+                new_value = np.random.default_rng().uniform(self._lb, self._ub, size=self._shape)
         new_value = self._round_and_clip(new_value)
         return self._cast_if_scalar(new_value)
 
@@ -339,9 +321,7 @@ class FloatParameter(Parameter):
             # deep copy value in case mutation_strategy operates in-place
             if isinstance(value, np.ndarray):
                 value = np.copy(value)
-            new_value = call_with_temperature(
-                self._mutation_strategy, value, temperature
-            )
+            new_value = call_with_temperature(self._mutation_strategy, value, temperature)
         else:
             if self._ub is None:
                 # in unbounded mode we will just add a Gaussian
@@ -369,17 +349,13 @@ class LogSpaceFloatParameter(FloatParameter):
         mutation_strategy,
         sampling_strategy,
     ):
-        super().__init__(
-            shape, lb, ub, init, precision, mutation_strategy, sampling_strategy
-        )
+        super().__init__(shape, lb, ub, init, precision, mutation_strategy, sampling_strategy)
 
         if lb <= 0.0:
             raise ValueError(
                 f"Logarithmically scaled parameter must have a lower bound > 0 (got {str(lb)})"
             )
-        self._log_param = FloatParameter(
-            shape, np.log(lb), np.log(ub), None, None, None, None
-        )
+        self._log_param = FloatParameter(shape, np.log(lb), np.log(ub), None, None, None, None)
         if init is None:
             init = np.exp(self._log_param.initial_value)
             init = self._round_and_clip(init)
@@ -414,9 +390,7 @@ class LogSpaceFloatParameter(FloatParameter):
             # deep copy value in case mutation_strategy operates in-place
             if isinstance(value, np.ndarray):
                 value = np.copy(value)
-            new_value = call_with_temperature(
-                self._mutation_strategy, value, temperature
-            )
+            new_value = call_with_temperature(self._mutation_strategy, value, temperature)
         else:
             log_value = np.log(value)
             new_value = self._log_param.mutate(log_value, temperature)

@@ -15,7 +15,7 @@ import gzip
 import os
 import pickle
 from enum import Enum
-from typing import Union
+
 import numpy as np
 
 
@@ -76,7 +76,7 @@ def merge_dicts(*args):
     new_dict = {}
     for d in args:
         for k, v in d.items():
-            if k in new_dict.keys() and new_dict[k] != v:
+            if k in new_dict and new_dict[k] != v:
                 raise ValueError(
                     f"Could not merge dicts! The key '{k}' is contained in multiple dictionaries with different values"
                 )
@@ -126,9 +126,7 @@ class NTimesEvaluator:
         if n <= 0:
             raise ValueError(f"n must be > 0, but got {n}")
         if yield_after is not None and yield_after >= n:
-            raise ValueError(
-                f"'yield_after' must be less than 'n', but got {yield_after} and {n}"
-            )
+            raise ValueError(f"'yield_after' must be less than 'n', but got {yield_after} and {n}")
         if callable(reduction):
             self._reduction = reduction
         elif reduction == "mean":
@@ -164,14 +162,11 @@ class NTimesEvaluator:
 
 
 def _contains_number(text):
-    for c in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-        if c in text:
-            return True
-    return False
+    return any(c in text for c in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
 
-def parse_runtime(runtime: Union[int, float, str]):
-    if isinstance(runtime, float) or isinstance(runtime, int):
+def parse_runtime(runtime: int | float | str):
+    if isinstance(runtime, (float, int)):
         return runtime
     orig_runtime = runtime
     if " " in runtime:
@@ -282,9 +277,9 @@ def steps_to_pretty_str(steps):
     if steps is None:
         return "-"
     if steps > 1e6:
-        return f"{steps//1e6:0.0f}M"
+        return f"{steps // 1e6:0.0f}M"
     if steps > 1e3:
-        return f"{steps//1e3:0.0f}k"
+        return f"{steps // 1e3:0.0f}k"
     return str(steps)
 
 
@@ -309,7 +304,7 @@ def time_to_pretty_str(elapsed):
     elif seconds > 20:  # 27s
         return f"{seconds:02.0f} s"
     elif seconds < 1:  # 837ms
-        return f"{1000*seconds:0.0f} ms"
+        return f"{1000 * seconds:0.0f} ms"
     else:  # 9.83s
         return f"{seconds:0.02f} s"
 

@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+
 import pyhopper
 from pyhopper.callbacks.tensorboard import TensorboardCallback
 

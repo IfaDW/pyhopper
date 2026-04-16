@@ -15,7 +15,6 @@
 
 import numpy as np
 
-
 _global_pruner_obj = None
 _global_intermediate_results_list = []
 

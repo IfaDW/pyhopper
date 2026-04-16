@@ -13,42 +13,43 @@
 # limitations under the License.
 
 import os.path
+import time
+from collections.abc import Callable, Sequence
+from types import FunctionType
+from typing import Any
+
+import numpy as np
 
 import pyhopper
+
 from .cache import EvaluationCache
 from .callbacks import History
 from .callbacks.callbacks import CheckpointCallback
+from .parallel import SignalListener, TaskManager, execute
 from .parameters import (
-    FloatParameter,
-    IntParameter,
     ChoiceParameter,
     CustomParameter,
+    FloatParameter,
+    IntParameter,
+    LogSpaceFloatParameter,
     Parameter,
     PowerOfIntParameter,
-    LogSpaceFloatParameter,
 )
-from .parallel import execute, TaskManager, SignalListener
-import numpy as np
-from typing import Union, Optional, Any, Tuple, Sequence
-from types import FunctionType
-import time
-
-from .run_context import ScheduledRun, RunContext
+from .run_context import RunContext, ScheduledRun
 from .utils import (
-    sanitize_bounds,
-    infer_shape,
-    ParamInfo,
+    Candidate,
     CandidateType,
-    merge_dicts,
-    convert_to_list,
+    ParamInfo,
+    WrappedSample,
     convert_to_checkpoint_path,
+    convert_to_list,
+    infer_shape,
     load_dict,
+    merge_dicts,
+    sanitize_bounds,
     store_dict,
     unwrap_sample,
-    WrappedSample,
-    Candidate,
 )
-
 
 # def register_conditional(*args, **kwargs) -> ConditionalParameter:
 #     """Creates a new conditional parameter similar to ```pyhopper.choice``` but allows nested configuration spaces.
@@ -120,14 +121,14 @@ from .utils import (
 
 
 def register_int(
-    lb: Optional[Union[int, float, np.ndarray]] = None,
-    ub: Optional[Union[int, float, np.ndarray]] = None,
-    init: Optional[Union[int, float, np.ndarray]] = None,
-    multiple_of: Optional[int] = None,
-    power_of: Optional[int] = None,
-    shape: Optional[Union[int, Tuple]] = None,
-    seeding_fn: Optional[callable] = None,
-    mutation_fn: Optional[callable] = None,
+    lb: int | float | np.ndarray | None = None,
+    ub: int | float | np.ndarray | None = None,
+    init: int | float | np.ndarray | None = None,
+    multiple_of: int | None = None,
+    power_of: int | None = None,
+    shape: int | tuple | None = None,
+    seeding_fn: Callable | None = None,
+    mutation_fn: Callable | None = None,
 ) -> IntParameter:
     """Creates a new integer parameter (both lower and upper bounds are **inclusive**)
 
@@ -183,8 +184,8 @@ def register_int(
 
 
 def register_custom(
-    seeding_fn: Optional[callable] = None,
-    mutation_fn: Optional[callable] = None,
+    seeding_fn: Callable | None = None,
+    mutation_fn: Callable | None = None,
     init: Any = None,
 ) -> CustomParameter:
     if seeding_fn is None and init is None:
@@ -206,16 +207,16 @@ def recursive_check_for_ph_types_and_fail(options):
         for v in options:
             recursive_check_for_ph_types_and_fail(v)
     elif isinstance(options, dict):
-        for k, v in options:
+        for _k, v in options:
             recursive_check_for_ph_types_and_fail(v)
 
 
 def register_choice(
     *args,
-    init_index: Optional[Any] = None,
+    init_index: Any | None = None,
     is_ordinal: bool = False,
-    mutation_fn: Optional[FunctionType] = None,
-    seeding_fn: Optional[FunctionType] = None,
+    mutation_fn: FunctionType | None = None,
+    seeding_fn: FunctionType | None = None,
 ) -> ChoiceParameter:
     """Creates a new choice parameter
 
@@ -259,9 +260,9 @@ def register_choice(
 
 
 def register_bool(
-    init: Optional[Any] = None,
-    mutation_fn: Optional[FunctionType] = None,
-    seeding_fn: Optional[FunctionType] = None,
+    init: Any | None = None,
+    mutation_fn: FunctionType | None = None,
+    seeding_fn: FunctionType | None = None,
 ) -> ChoiceParameter:
     """Creates a new choice parameter
 
@@ -281,15 +282,15 @@ def register_bool(
 
 
 def register_float(
-    lb: Optional[Union[int, float, np.ndarray]] = None,
-    ub: Optional[Union[int, float, np.ndarray]] = None,
-    fmt: Optional[str] = None,
-    init: Optional[Union[int, float, np.ndarray]] = None,
-    log: Union[bool] = None,
-    precision: Optional[int] = None,
-    shape: Optional[Union[int, Tuple]] = None,
-    mutation_fn: Optional[FunctionType] = None,
-    seeding_fn: Optional[FunctionType] = None,
+    lb: int | float | np.ndarray | None = None,
+    ub: int | float | np.ndarray | None = None,
+    fmt: str | None = None,
+    init: int | float | np.ndarray | None = None,
+    log: bool = None,
+    precision: int | None = None,
+    shape: int | tuple | None = None,
+    mutation_fn: FunctionType | None = None,
+    seeding_fn: FunctionType | None = None,
 ) -> FloatParameter:
     """Creates a new floating point parameter
 
@@ -334,23 +335,19 @@ def register_float(
             precision = int(fmt)
         except ValueError as e:
             raise ValueError(
-                f"Could not parse format string '{fmt}'. Valid examples are ':0.3f', '0.1g' (error details: {str(e)})"
-            )
+                f"Could not parse format string '{fmt}'. Valid examples are ':0.3f', '0.1g' (error details: {e})"
+            ) from e
 
     if log and (lb is None or ub is None):
         raise ValueError(
             "Logarithmically distributed mode without bounds is not supported. Please specify lower and upper bound."
         )
     if log and (lb <= 0 or ub <= 0):
-        raise ValueError(
-            "Both bounds for logarithmically distributed parameter must be positive."
-        )
+        raise ValueError("Both bounds for logarithmically distributed parameter must be positive.")
 
     param_shape = infer_shape(init, lb, ub) if shape is None else shape
     if log:
-        return LogSpaceFloatParameter(
-            param_shape, lb, ub, init, precision, mutation_fn, seeding_fn
-        )
+        return LogSpaceFloatParameter(param_shape, lb, ub, init, precision, mutation_fn, seeding_fn)
     param = FloatParameter(
         param_shape,
         lb,
@@ -364,7 +361,7 @@ def register_float(
 
 
 class Search:
-    def __init__(self, *args: Union[dict, Sequence[dict]], **kwargs):
+    def __init__(self, *args: dict | Sequence[dict], **kwargs):
         """
         Creates a new search object.
 
@@ -462,7 +459,7 @@ class Search:
         if isinstance(node, Parameter):
             free_params = 1
         elif isinstance(node, dict):
-            for k, v in node.items():
+            for _k, v in node.items():
                 free_params += self._count_free_parameters_rec(v)
         elif isinstance(node, list):
             for v in node:
@@ -486,16 +483,16 @@ class Search:
                 raise ValueError(
                     f"Parameter guess '{node_candidate}' does not match the tree structure '{node_best.keys()}' registered in 'Search.__init__'"
                 )
-            for k in node_candidate.keys():
-                if k not in node_best.keys():
+            for k in node_candidate:
+                if k not in node_best:
                     raise ValueError(
                         f"Parameter guess for '{k}' was provided but has not been registered in 'Search.__init__'. You can "
                         f"register '{k}' as a dummy parameter by passing '...= Search({k}=None, ...)'."
                     )
 
             candidate = {}
-            for k, v in node_best.items():
-                if k in node_candidate.keys():
+            for k, _v in node_best.items():
+                if k in node_candidate:
                     candidate[k] = self._enqueue_rec(node_best[k], node_candidate[k])
                 else:
                     candidate[k] = node_best[k]
@@ -570,9 +567,7 @@ class Search:
     def sample_solution(self):
         return self._sample_solution_rec(self._params)
 
-    def _mutate_from_best_rec(
-        self, temperature, node=None, best_node=None, bitmask=None
-    ):
+    def _mutate_from_best_rec(self, temperature, node=None, best_node=None, bitmask=None):
         if isinstance(node, Parameter):
             p = True if bitmask is None else bitmask.pop()
             # consume one bit -> tells us if we should mutate or not
@@ -679,9 +674,7 @@ class Search:
                 print("Remote process caught exception in objective function: ")
                 print("======================================================")
                 print(candidate_result.error)
-                print(
-                    "======================================================", flush=True
-                )
+                print("======================================================", flush=True)
                 raise ValueError("Pyhopper - Remote process caught exception")
             return
         if candidate_result.is_nan and not self._run_context.ignore_nans:
@@ -712,35 +705,26 @@ class Search:
             return
 
         for c in self._run_context.callbacks:
-            c.on_evaluate_end(
-                candidate.unwrapped_value, candidate_result.value, param_info
-            )
+            c.on_evaluate_end(candidate.unwrapped_value, candidate_result.value, param_info)
 
         if (
             self._best_f is None
-            or (
-                self._run_context.direction == "max"
-                and candidate_result.value > self._best_f
-            )
-            or (
-                self._run_context.direction == "min"
-                and candidate_result.value < self._best_f
-            )
+            or (self._run_context.direction == "max" and candidate_result.value > self._best_f)
+            or (self._run_context.direction == "min" and candidate_result.value < self._best_f)
         ):
             # new best solution
             self._best_solution = candidate
             self._best_f = candidate_result.value
             for c in self._run_context.callbacks:
-                c.on_new_best(
-                    self._best_solution.unwrapped_value, self._best_f, param_info
-                )
+                c.on_new_best(self._best_solution.unwrapped_value, self._best_f, param_info)
 
     def _shutdown_worker_processes(self):
         # This is actually not needed but let's keep it for potential future use
         if self._run_context.task_executor is not None:
             self._run_context.task_executor.shutdown()
-            import psutil
             import signal
+
+            import psutil
 
             try:
                 parent = psutil.Process(os.getpid())
@@ -760,19 +744,19 @@ class Search:
         self,
         objective_function,
         direction: str = "maximize",
-        runtime: Union[int, float, str, None] = None,
-        steps: Union[int, str, None] = None,
+        runtime: int | float | str | None = None,
+        steps: int | str | None = None,
         endless_mode: bool = False,
-        seeding_steps: Optional[int] = None,
-        seeding_runtime: Union[int, float, str, None] = None,
-        seeding_ratio: Optional[float] = 0.25,
+        seeding_steps: int | None = None,
+        seeding_runtime: int | float | str | None = None,
+        seeding_ratio: float | None = 0.25,
         pruner=None,
         n_jobs=1,
         quiet=False,
         ignore_nans=False,
         mp_backend="auto",
         enable_rejection_cache=True,
-        callbacks: Union[callable, list, None] = None,
+        callbacks: Callable | list | None = None,
         start_temperature: float = 1,
         end_temperature: float = 0.2,
         kwargs=None,
@@ -847,7 +831,9 @@ class Search:
         if n_jobs != 1:
             task_executor = TaskManager(n_jobs, mp_backend)
             if task_executor.n_jobs == 1:
-                task_executor = None  # '1x per-gpu' on single GPU machines -> No need for multiprocess overhead
+                task_executor = (
+                    None  # '1x per-gpu' on single GPU machines -> No need for multiprocess overhead
+                )
 
         callbacks = convert_to_list(callbacks)
         if keep_history:
@@ -899,9 +885,7 @@ class Search:
         current_temperature = schedule.temperature
         # Before entering the loop, let's wait until we can run at least one candidate
         self._wait_for_one_free_executor()
-        while not schedule.is_timeout(
-            self._run_context.run_history.estimated_candidate_runtime
-        ):
+        while not schedule.is_timeout(self._run_context.run_history.estimated_candidate_runtime):
             if self.free_param_count == 0 and self.manual_queue_count == 0:
                 raise ValueError(
                     "There are not parameters to tune (search space does not contain any `pyhopper.Parameter` instance)"
@@ -933,9 +917,7 @@ class Search:
                     c.on_duplicate_sampled(candidate.unwrapped_value, param_info)
 
                 # Reject sample
-                current_temperature *= (
-                    1.05  # increase temperature by 5% if we found a duplicate
-                )
+                current_temperature *= 1.05  # increase temperature by 5% if we found a duplicate
                 current_temperature = max(current_temperature, 1)
             schedule.increment_step()
             # Before entering the loop, let's wait until we can run at least one candidate
@@ -1000,10 +982,7 @@ class Search:
             self._best_f = state_dict["best_f"]
             self._best_solution = state_dict["best_solution"]
             if "pruner" in state_dict:
-                if (
-                    self._run_context is not None
-                    and self._run_context.pruner is not None
-                ):
+                if self._run_context is not None and self._run_context.pruner is not None:
                     if pruner is not None and pruner != self._run_context.pruner:
                         raise ValueError(
                             "Error. Pruner object passed to 'load' and other pruner object passed to 'run'"
@@ -1013,7 +992,7 @@ class Search:
                     pruner.load_state_dict(state_dict["pruner"])
 
         except KeyError as e:
-            raise ValueError(f"Could not parse file '{checkpoint_path}' ({str(e)})")
+            raise ValueError(f"Could not parse file '{checkpoint_path}' ({e})") from e
 
     @property
     def manual_queue_count(self) -> int:
@@ -1026,7 +1005,7 @@ class Search:
         return self._free_param_count
 
     @property
-    def checkpoint_path(self) -> Optional[str]:
+    def checkpoint_path(self) -> str | None:
         """Path to the checkpoint file in which the intermediate state of the search will be stored.
         Equals the `checkpoint_path` argument of `search.run()` if the argument was a file.
         If the `checkpoint_path` argument of `search.run()` was a directory, then the newly created file checkpoint file will be returned.
@@ -1034,14 +1013,12 @@ class Search:
         return self._checkpoint_path
 
     @property
-    def best(self) -> Optional[dict]:
+    def best(self) -> dict | None:
         """A dict object containing the best found parameter so far. None if no candidate has been evaluated yet."""
-        return (
-            None if self._best_solution is None else self._best_solution.unwrapped_value
-        )
+        return None if self._best_solution is None else self._best_solution.unwrapped_value
 
     @property
-    def best_f(self) -> Optional[float]:
+    def best_f(self) -> float | None:
         """The objective value of the best found parameter so far. None if no candidate has been evaluated yet."""
         return self._best_f
 

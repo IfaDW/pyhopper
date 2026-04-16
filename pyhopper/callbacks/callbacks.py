@@ -1,9 +1,9 @@
-import pickle
 import os
+import pickle
+import time
 
 import pyhopper
 from pyhopper.utils import ParamInfo, convert_to_checkpoint_path
-import time
 
 
 class Callback:
@@ -105,9 +105,7 @@ class CheckpointCallback(Callback):
         self._search_obj.save(self._checkpoint_path)
 
     def on_search_end(self):
-        self._search_obj.save(
-            self._checkpoint_path
-        )  # Search is done -> forget run context
+        self._search_obj.save(self._checkpoint_path)  # Search is done -> forget run context
 
 
 class History(Callback):
@@ -217,23 +215,14 @@ class History(Callback):
             raise ValueError(
                 "Did not store candidates as log_candidates=False was passed to __init__"
             )
-        if len(self._log_candidate) > 0:
-            if item not in self._log_candidate[0].keys():
-                raise ValueError(
-                    f"Error: Could not find key '{item}' in logged parameters"
-                )
+        if len(self._log_candidate) > 0 and item not in self._log_candidate[0]:
+            raise ValueError(f"Error: Could not find key '{item}' in logged parameters")
         return [self._log_candidate[i][item] for i in range(len(self._log_candidate))]
 
     def get_pruned_marginal(self, item):
-        if len(self._pruned_candidates) > 0:
-            if item not in self._pruned_candidates[0].keys():
-                raise ValueError(
-                    f"Error: Could not find key '{item}' in logged parameters"
-                )
-        return [
-            self._pruned_candidates[i][item]
-            for i in range(len(self._pruned_candidates))
-        ]
+        if len(self._pruned_candidates) > 0 and item not in self._pruned_candidates[0]:
+            raise ValueError(f"Error: Could not find key '{item}' in logged parameters")
+        return [self._pruned_candidates[i][item] for i in range(len(self._pruned_candidates))]
 
     def __getitem__(self, item):
         if isinstance(item, int):

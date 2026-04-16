@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import numpy as np
 import time
+
+import numpy as np
 import pytest
 
 import pyhopper
@@ -48,22 +49,22 @@ def of(param, x=None):
 
 
 def ofall(param, x=None):
-    assert "lr" in param.keys()
-    assert "lr2" in param.keys()
-    assert "lr3" in param.keys()
-    if "np10" in param.keys():
+    assert "lr" in param
+    assert "lr2" in param
+    assert "lr3" in param
+    if "np10" in param:
         assert param["np10"].shape[0] == 10
-    if "mul8" in param.keys():
+    if "mul8" in param:
         assert np.all(param["mul8"] % 8 == 0)
-    if "mul8_t" in param.keys():
+    if "mul8_t" in param:
         assert np.all(param["mul8_t"] % 8 == 0)
     return -np.square(param["lr"] - 3e-4) * 10
 
 
 def of_kwargs(param):
-    assert "a" in param.keys()
-    assert "b" in param.keys()
-    assert "c" in param.keys()
+    assert "a" in param
+    assert "b" in param
+    assert "c" in param
     return param["a"] * 0.5
 
 
@@ -75,9 +76,9 @@ def test_kwargs():
     )
 
     r1 = search.run(of_kwargs, direction="max", steps=10)
-    assert "a" in r1.keys()
-    assert "b" in r1.keys()
-    assert "c" in r1.keys()
+    assert "a" in r1
+    assert "b" in r1
+    assert "c" in r1
 
 
 def test_merge():
@@ -88,9 +89,9 @@ def test_merge():
     )
 
     r1 = search.run(of_kwargs, direction="max", steps=10)
-    assert "a" in r1.keys()
-    assert "b" in r1.keys()
-    assert "c" in r1.keys()
+    assert "a" in r1
+    assert "b" in r1
+    assert "c" in r1
 
 
 def test_merge_raise():
@@ -123,8 +124,8 @@ def test_simple1():
 
     r1 = search.run(of, direction="max", steps=10)
     r2 = search.run(of, direction="max", steps=50, kwargs={"x": 1})
-    assert "lr" in r1.keys()
-    assert "lr" in r2.keys()
+    assert "lr" in r1
+    assert "lr" in r2
 
 
 def of_array(param, x=None):
@@ -138,7 +139,7 @@ def test_nparray():
     search = pyhopper.Search({"lr": pyhopper.float(lb=-10, ub=10, shape=(10, 10))})
 
     param = search.run(of_array, direction="max", steps=20)
-    assert "lr" in param.keys()
+    assert "lr" in param
     assert np.all(param["lr"] >= -10)
     assert np.all(param["lr"] <= 10)
     assert param["lr"].shape == (10, 10)
@@ -162,17 +163,17 @@ def test_float_register():
         }
     )
     r1 = search.run(ofall, direction="max", steps=10)
-    assert "lr" in r1.keys()
-    assert "lr2" in r1.keys()
-    assert "lr3" in r1.keys()
-    assert "lr4" in r1.keys()
-    assert "lr5" in r1.keys()
+    assert "lr" in r1
+    assert "lr2" in r1
+    assert "lr3" in r1
+    assert "lr4" in r1
+    assert "lr5" in r1
     search.run(ofall, direction="max", runtime=0.5)
-    assert "lr" in r1.keys()
-    assert "lr2" in r1.keys()
-    assert "lr3" in r1.keys()
-    assert "lr4" in r1.keys()
-    assert "lr5" in r1.keys()
+    assert "lr" in r1
+    assert "lr2" in r1
+    assert "lr3" in r1
+    assert "lr4" in r1
+    assert "lr5" in r1
 
 
 def test_float_register_name_negative_single_bound():
@@ -198,9 +199,9 @@ def test_int_register():
         }
     )
     r1 = search.run(ofall, direction="max", seeding_steps=5, steps=10)
-    assert "lr" in r1.keys()
-    assert "lr2" in r1.keys()
-    assert "lr3" in r1.keys()
+    assert "lr" in r1
+    assert "lr2" in r1
+    assert "lr3" in r1
 
 
 def test_int_register_name_negative_single_bound():
@@ -221,7 +222,7 @@ def test_choice_register():
     # r1 = search.run(of, seeding_runtime="1h", runtime="1s", n_jobs=2)
     r1 = search.run(of, direction="max", steps=10, n_jobs=5)
     r1 = search.run(of, direction="max", seeding_steps=2, steps=10, n_jobs=5)
-    assert "lr" in r1.keys()
+    assert "lr" in r1
 
 
 def slow_of(param):
@@ -335,7 +336,7 @@ def test_add_m2():
 
 
 def of_options(param, x=None):
-    assert "opt" in param.keys()
+    assert "opt" in param
     assert param["opt"] in ["a", "b", "c"]
     return np.random.default_rng().normal()
 
@@ -344,7 +345,7 @@ def test_options():
     search = pyhopper.Search(opt=pyhopper.choice("a", "b", "c"))
 
     param = search.run(of_options, direction="max", steps=20)
-    assert "opt" in param.keys()
+    assert "opt" in param
     assert param["opt"] in ["a", "b", "c"]
 
 

@@ -1,11 +1,9 @@
 import gym
 
-from stable_baselines3 import PPO
-
 # import stable_baselines3
-
 # from stable_baselines3.ppo import MlpPolicy
 import numpy as np
+from stable_baselines3 import PPO
 from torch.nn import ReLU, Tanh
 
 import pyhopper
@@ -13,7 +11,7 @@ import pyhopper
 
 def score_trained_model(model):
     final_rewards = []
-    for i in range(20):
+    for _i in range(20):
         obs = model.env.reset()
         done = False
         total_reward = 0
@@ -29,7 +27,7 @@ def score_random():
     env = gym.make("CartPoleContinuousBulletEnv-v0")
 
     final_rewards = []
-    for i in range(20):
+    for _i in range(20):
         obs = env.reset()
         total_reward = 0
         steps = 0
@@ -78,7 +76,7 @@ def train_ppo(params, render=False):
             ent_coef=params["ent_coef"],
         ).learn(40000)
     except (ValueError, ZeroDivisionError):
-        raise pyhopper.CancelEvaluation()
+        raise pyhopper.CancelEvaluation() from None
     # score, _ = evaluate_policy(model, gym.make("AntBulletEnv-v0"))
     # print("total reward: ", score)
     score = score_trained_model(model)

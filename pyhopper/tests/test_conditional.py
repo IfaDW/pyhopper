@@ -41,7 +41,7 @@ def test_manual():
     )
 
     r1 = search.run(of, direction="max", steps=30, seeding_steps=10)
-    assert "lr" in r1.keys()
+    assert "lr" in r1
 
 
 def test_manual2():
@@ -55,4 +55,4 @@ def test_manual2():
     )
 
     r1 = search.run(of, direction="max", steps=30, seeding_steps=10)
-    assert "lr" in r1.keys()
+    assert "lr" in r1

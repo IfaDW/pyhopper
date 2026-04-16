@@ -18,9 +18,9 @@ import pytest
 
 import pyhopper
 from pyhopper.utils import (
-    store_dict,
-    load_dict,
     convert_to_checkpoint_path,
+    load_dict,
+    store_dict,
 )
 
 
@@ -36,7 +36,7 @@ def test_manual():
     search += {"lr": 0.3}
 
     r1 = search.run(of, direction="max", steps=search.manual_queue_count)
-    assert "lr" in r1.keys()
+    assert "lr" in r1
 
 
 def test_checkpoint():
@@ -50,7 +50,7 @@ def test_checkpoint():
     if os.path.isfile(checkpoint_path):
         os.remove(checkpoint_path)
     r1 = search.run(of, direction="max", steps=3, checkpoint_path=checkpoint_path)
-    assert "lr" in r1.keys()
+    assert "lr" in r1
     ckpt = load_dict(checkpoint_path)
     assert ckpt["history"]["log_candidate"][0]["lr"] == 0.1
     assert ckpt["history"]["log_candidate"][1]["lr"] == 0.2
@@ -90,7 +90,7 @@ def test_checkpoint_pruner():
         checkpoint_path=checkpoint_path,
         pruner=pruner,
     )
-    assert "lr" in r1.keys()
+    assert "lr" in r1
     ckpt = load_dict(checkpoint_path)
     assert 0.4 in ckpt["pruner"]["top_k_of"]
     assert 0.3 in ckpt["pruner"]["top_k_of"]
@@ -142,7 +142,7 @@ def test_nested():
         x=None,
     )
     r1 = search.run(of_nested, direction="max", steps=10)
-    assert "lr" in r1["group1"].keys()
+    assert "lr" in r1["group1"]
 
 
 def test_nested_raise():
@@ -153,7 +153,7 @@ def test_nested_raise():
         search += {"group2": 1}
     search += {"group2": {"d": 1}}
     r1 = search.run(of_nested, direction="max", steps=10)
-    assert "lr" in r1["group1"].keys()
+    assert "lr" in r1["group1"]
 
 
 def test_checkpoint_path():
@@ -162,6 +162,7 @@ def test_checkpoint_path():
     print("x ", x)
     print("x2", x2)
     assert x == x2
+
 
 if __name__ == "__main__":
     # test_checkpoint()

@@ -13,6 +13,6 @@
 # limitations under the License.
 
 
-from pyhopper.pruners.pruners import TopKPruner as TopKPruner
-from pyhopper.pruners.pruners import QuantilePruner as QuantilePruner
 from pyhopper.pruners.pruners import Pruner as Pruner
+from pyhopper.pruners.pruners import QuantilePruner as QuantilePruner
+from pyhopper.pruners.pruners import TopKPruner as TopKPruner

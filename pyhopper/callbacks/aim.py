@@ -1,6 +1,6 @@
-from typing import Optional
-import aim
 import os
+
+import aim
 
 from pyhopper.callbacks import Callback
 
@@ -8,8 +8,8 @@ from pyhopper.callbacks import Callback
 class AimCallback(Callback):
     def __init__(
         self,
-        name: Optional[str] = "PyHopper",
-        repo: Optional[str] = None,
+        name: str | None = "PyHopper",
+        repo: str | None = None,
     ):
         self.run: aim.Run = aim.Run(experiment=name, repo=repo)
         self._best_params = None
@@ -31,5 +31,5 @@ class AimCallback(Callback):
     def on_search_end(self):
         os.makedirs("pyhopper_runs", exist_ok=True)
         for key, value in self._best_params.items():
-            self.run.set(('best_params', key), value, strict=False)
+            self.run.set(("best_params", key), value, strict=False)
         self.run.report_successful_finish()

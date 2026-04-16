@@ -45,7 +45,7 @@ def test_simple_inc_dec():
 
 
 def of(param, x=None):
-    for i in range(10):
+    for _i in range(10):
         yield np.random.default_rng().normal() - np.square(param["lr"] - 4) * 10
 
 
@@ -60,9 +60,7 @@ def test_simple1():
     )
 
     search.run(of, direction="max", steps=10)
-    search.run(
-        of, direction="max", steps=100, pruner=pyhopper.pruners.TopKPruner(5)
-    )
+    search.run(of, direction="max", steps=100, pruner=pyhopper.pruners.TopKPruner(5))
     search.run(
         of,
         direction="max",
@@ -107,7 +105,7 @@ def test_simple2():
 
 
 def of_3(param, x=None):
-    for i in range(10):
+    for _i in range(10):
         r = np.random.default_rng().normal() - np.square(param["lr"] - 4) * 10
         if pyhopper.should_prune(r):
             raise pyhopper.PruneEvaluation()
@@ -125,9 +123,7 @@ def test_simple3():
     )
 
     search.run(of_3, direction="max", steps=10)
-    search.run(
-        of_3, direction="max", steps=100, pruner=pyhopper.pruners.TopKPruner(5)
-    )
+    search.run(of_3, direction="max", steps=100, pruner=pyhopper.pruners.TopKPruner(5))
     search.run(
         of_3,
         direction="max",
@@ -158,14 +154,14 @@ def test_exception1():
         }
     )
     r1 = search.run(of_prune_first, direction="max", steps=10)
-    assert "lr" in r1.keys()
+    assert "lr" in r1
 
 
 def of_nan(param, x=None):
     global of_counter
     of_counter += 1
     if of_counter in [0, 1, 4, 10, 50]:
-        return np.NaN
+        return np.nan
     return np.random.default_rng().normal()
 
 
@@ -201,13 +197,13 @@ def test_nan():
     of_counter = 0
     r1 = search.run(of_nan, direction="max", ignore_nans=True, n_jobs=5, steps=300)
     of_counter = 0
-    assert "lr" in r1.keys()
+    assert "lr" in r1
 
 
 def of_nan2(param, x=None):
     r = np.random.default_rng().normal()
     if r > 0.5:
-        return np.NaN
+        return np.nan
     return r
 
 
@@ -346,7 +342,7 @@ def test_quantile():
     assert not pruner.should_prune([15, 15, 30, 15, 15])
     pruner.append([50, 50], True)
     pruner.append([50], True)
-    for i in range(20):
+    for _i in range(20):
         pruner.append([50, 100, 50], True)
     assert pruner.should_prune([20])
     assert pruner.should_prune([20, 20])

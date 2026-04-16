@@ -12,17 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tqdm.auto import tqdm
+import time
+
 import numpy as np
+from tqdm.auto import tqdm
+
 from pyhopper.callbacks import Callback
 from pyhopper.utils import (
-    ParamInfo,
     CandidateType,
+    ParamInfo,
+    parse_runtime,
     steps_to_pretty_str,
     time_to_pretty_str,
-    parse_runtime,
 )
-import time
 
 
 class ScheduledRun:
@@ -38,9 +40,7 @@ class ScheduledRun:
         end_temperature=0.0,
     ):
         if step_limit is None and runtime is None and endless_mode is False:
-            raise ValueError(
-                "Must specify either 'max_steps', 'runtime', or 'endless_mode'"
-            )
+            raise ValueError("Must specify either 'max_steps', 'runtime', or 'endless_mode'")
         if (step_limit is not None or runtime is not None) and endless_mode:
             raise ValueError(
                 "Cannot specify both 'endless_mode' and 'max_steps'/'runtime' at the same time.'"
@@ -179,9 +179,7 @@ class ScheduledRun:
         self._temp_start_units = self.current_units
 
     def to_elapsed_str(self):
-        return (
-            f"{self._step} steps ({time_to_pretty_str(time.time()-self._start_time)})"
-        )
+        return f"{self._step} steps ({time_to_pretty_str(time.time() - self._start_time)})"
 
     def to_total_str(self):
         if self._step_limit is not None:
@@ -198,12 +196,12 @@ class ScheduledRun:
             progress = np.random.default_rng().random()
         else:
             progress = (self.current_units - self._temp_start_units) / max(
-                self.total_units - self._temp_start_units, 1e-6  # don't divide by 0
+                self.total_units - self._temp_start_units,
+                1e-6,  # don't divide by 0
             )
             progress = np.clip(progress, 0, 1)
         return (
-            self._start_temperature
-            + (self._end_temperature - self._start_temperature) * progress
+            self._start_temperature + (self._end_temperature - self._start_temperature) * progress
         )
 
     def state_dict(self):
@@ -220,9 +218,7 @@ class ProgBar(Callback):
         self._run_history = run_history
         self.disabled = disable
         if self._schedule.is_endless_mode:
-            bar_format = (
-                "Endless (stop with CTRL+C) {bar}| [{elapsed}<{remaining}{postfix}]",
-            )
+            bar_format = ("Endless (stop with CTRL+C) {bar}| [{elapsed}<{remaining}{postfix}]",)
         elif self._schedule.is_runtime_mode:
             bar_format = "{l_bar}{bar}| [{elapsed}<{remaining}{postfix}]"
         else:
@@ -250,9 +246,7 @@ class ProgBar(Callback):
         self.update()
 
     def update(self, close=False):
-        self._tqdm.n = (
-            self._schedule.total_units if close else self._schedule.current_units
-        )
+        self._tqdm.n = self._schedule.total_units if close else self._schedule.current_units
         self._tqdm.set_postfix_str(self._str_time_per_eval(), refresh=False)
         if self._run_history.best_f is not None:
             self._tqdm.set_description_str(
@@ -271,18 +265,16 @@ class ProgBar(Callback):
     # Time mode
     # 48% xXXXXXXXxxxxxxxxxxxxxxxxxxxxx | best: 0.42 (out of 3213) (00:38<1:00) [2.3min/param]
     def _str_time_per_eval(self):
-        total_params_evaluated = (
-            self._run_history.total_amount + self._run_history.total_pruned
-        )
+        total_params_evaluated = self._run_history.total_amount + self._run_history.total_pruned
         if total_params_evaluated == 0:
             return "..."
         seconds_per_param = self._schedule.current_runtime / total_params_evaluated
         if seconds_per_param > 60 * 60:
-            return f"{60*60/seconds_per_param:0.1f} param/h"
+            return f"{60 * 60 / seconds_per_param:0.1f} param/h"
         elif seconds_per_param > 60:
-            return f"{60/seconds_per_param:0.1f} param/min"
+            return f"{60 / seconds_per_param:0.1f} param/min"
         else:
-            return f"{1/seconds_per_param:0.1f} param/s"
+            return f"{1 / seconds_per_param:0.1f} param/s"
 
     def on_search_end(self):
         self.update(True)
@@ -370,12 +362,8 @@ class ProgBar(Callback):
                 ]
             )
         text_list.insert(0, ["Mode", "Best f", "Steps", "Pruned", "NaN", "Time"])
-        text_list.insert(
-            1, ["----------------", "----", "----", "----", "----", "----"]
-        )
-        text_list.insert(
-            -1, ["----------------", "----", "----", "----", "----", "----"]
-        )
+        text_list.insert(1, ["----------------", "----", "----", "----", "----", "----"])
+        text_list.insert(-1, ["----------------", "----", "----", "----", "----", "----"])
         if self._run_history.total_pruned == 0:
             # No candidate was pruned so let's not show this column
             for t in text_list:
@@ -386,15 +374,14 @@ class ProgBar(Callback):
                 t.pop(-2)
         num_items = len(text_list[0])
         maxes = [
-            np.max([len(text_list[j][i]) for j in range(len(text_list))])
-            for i in range(num_items)
+            np.max([len(text_list[j][i]) for j in range(len(text_list))]) for i in range(num_items)
         ]
         line_len = np.sum(maxes) + 3 * (num_items - 1)
         line = ""
-        for i in range(line_len // 2 - 4):
+        for _i in range(line_len // 2 - 4):
             line += "="
         line += " Summary "
-        for i in range(line_len - len(line)):
+        for _i in range(line_len - len(line)):
             line += "="
         print(line)
         for j in range(len(text_list)):
@@ -405,7 +392,7 @@ class ProgBar(Callback):
                 line += text_list[j][i].ljust(maxes[i])
             print(line)
         line = ""
-        for i in range(line_len):
+        for _i in range(line_len):
             line += "="
         print(line)
 

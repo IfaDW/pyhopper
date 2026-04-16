@@ -1,9 +1,9 @@
-from typing import Optional, Sequence
-
-import wandb
-from datetime import datetime
 import os
 import pickle
+from collections.abc import Sequence
+from datetime import datetime
+
+import wandb
 
 from pyhopper.callbacks import Callback
 
@@ -11,11 +11,11 @@ from pyhopper.callbacks import Callback
 class WandbCallback(Callback):
     def __init__(
         self,
-        project: Optional[str] = None,
-        entity: Optional[str] = None,
-        group: Optional[str] = None,
-        name: Optional[str] = None,
-        tags: Optional[Sequence] = None,
+        project: str | None = None,
+        entity: str | None = None,
+        group: str | None = None,
+        name: str | None = None,
+        tags: Sequence | None = None,
     ):
         wandb.init(
             project=project,

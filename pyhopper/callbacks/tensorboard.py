@@ -1,14 +1,10 @@
-from typing import Optional
-
 from tensorboardX import SummaryWriter
 
 from pyhopper.callbacks import Callback
 
 
 class TensorboardCallback(Callback):
-    def __init__(
-        self, logdir: Optional[str] = None, comment: str = "", flush_secs: int = 5
-    ):
+    def __init__(self, logdir: str | None = None, comment: str = "", flush_secs: int = 5):
         self._logdir = logdir
         self._tb_writer = SummaryWriter(logdir, comment=comment, flush_secs=flush_secs)
 

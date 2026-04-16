@@ -1,6 +1,5 @@
-import pickle
-
 import hashlib
+import pickle
 
 
 class EvaluationCache:
@@ -45,7 +44,7 @@ class EvaluationCache:
     def commit(self, item, result):
         if self._enabled:
             hash_code = self._deep_hash(item)
-            if hash_code in self._staging.keys():
+            if hash_code in self._staging:
                 del self._staging[hash_code]
             else:
                 print("WARNING: hash_code not found in staging!\n" + str(item))
